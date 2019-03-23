@@ -1,19 +1,18 @@
-package homework.Lesson6.server;
+package homework.lesson6.server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 
 public class ClientHandler {
-    enum Status{
-        close, open
-    };
+
     private MainServer server;
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
-    private Status socketStatus = Status.open;
+    private String nick;
 
     public ClientHandler(MainServer server, Socket socket) {
         try {
@@ -28,17 +27,38 @@ public class ClientHandler {
                     try {
                         while (true) {
                             String str = in.readUTF();
-                            if(str.equalsIgnoreCase("/end")) {
-                                out.writeUTF("/clientClose");
-                                socketStatus = Status.close;
-                                break;
-                            } else {
-                                server.closeInactiveClient();
-                                server.broadcastMsg(str);
-                            }
 
+                            if(str.startsWith("/auth")) {
+                                String[] tokens = str.split(" ");
+                                String newNick = AuthService.getNickByLoginAndPass(tokens[1], tokens[2]);
+                                if(newNick != null) {
+                                    sendMsg("/authok");
+                                    nick = newNick;
+                                    server.subscribe(ClientHandler.this);
+                                    break;
+                                } else {
+                                    sendMsg("Неверный логин/пароль или пользователь уже авторизован");
+                                }
+                            }
                         }
+
+                        while (true) {
+                            String str = in.readUTF();
+                            if (str.equals("/end")) {
+                                out.writeUTF("/serverclosed");
+                                break;
+                            }
+                            if(str.startsWith("/w")){
+                                String[] tokens = str.split(" ");
+                                server.sendPrivateMsg(tokens[0], nick, tokens[1], str);
+                            } else {
+                                server.broadcastMsg(nick + " : " + str);
+                            }
+                        }
+
                     } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SQLException e) {
                         e.printStackTrace();
                     } finally {
                         try {
@@ -56,6 +76,7 @@ public class ClientHandler {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                        server.unsubscribe(ClientHandler.this);
                     }
                 }
             }).start();
@@ -65,12 +86,8 @@ public class ClientHandler {
         }
     }
 
-    public boolean isSocketStatus() {
-        if(socketStatus == Status.close){
-            return true;
-        } else {
-            return false;
-        }
+    public String getNick(){
+        return this.nick;
     }
 
     public void sendMsg(String msg) {
