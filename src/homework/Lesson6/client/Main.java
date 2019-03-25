@@ -1,4 +1,4 @@
-package homework.Lesson6.client;
+package homework.lesson6.client;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -15,7 +15,6 @@ public class Main extends Application {
         Scene scene = new Scene(root, 350, 375);
         primaryStage.setScene(scene);
         primaryStage.show();
-
     }
 
 
@@ -23,3 +22,33 @@ public class Main extends Application {
         launch(args);
     }
 }
+
+
+
+
+//    Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+//        primaryStage.setTitle("chat 2k19");
+////        Scene scene = new Scene(root, 350, 375);
+////        primaryStage.setScene(scene);
+////        primaryStage.show();
+////
+////        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+////            public void handle(WindowEvent we) {
+////                System.out.println("Stage is closing");
+////            }
+////        });
+////        primaryStage.close();
+//
+//
+//
+//final Scene scene = new Scene(root,300, 250);
+//        scene.setFill(null);
+//        primaryStage.setScene(scene);
+//        primaryStage.show();
+//        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+//public void handle(WindowEvent we) {
+//        System.out.println("Stage is closing");
+//        //primaryStage.close();
+//        System.exit(0);
+//        }
+//        });

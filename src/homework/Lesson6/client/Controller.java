@@ -1,26 +1,26 @@
-package homework.Lesson6.client;
+package homework.lesson6.client;
 
-import javafx.event.EventHandler;
+import homework.lesson6.server.AuthService;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
+import javafx.scene.layout.HBox;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 
-public class Controller implements Initializable{
+public class Controller {
     @FXML
     TextArea textArea;
 
@@ -30,6 +30,20 @@ public class Controller implements Initializable{
     @FXML
     Button btn1;
 
+    @FXML
+    HBox bottomPanel;
+
+    @FXML
+    HBox upperPanel;
+
+    @FXML
+    TextField loginField;
+
+    @FXML
+    PasswordField passwordField;
+
+    private boolean isAuthorized;
+
     Socket socket;
     DataInputStream in;
     DataOutputStream out;
@@ -37,8 +51,39 @@ public class Controller implements Initializable{
     final String IP_ADRESS = "localhost";
     final int PORT = 8189;
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public void setAuthorized(boolean isAuthorized) {
+        this.isAuthorized = isAuthorized;
+        if(!isAuthorized) {
+            upperPanel.setVisible(true);
+            upperPanel.setManaged(true);
+            bottomPanel.setVisible(false);
+            bottomPanel.setManaged(false);
+        } else {
+            upperPanel.setVisible(false);
+            upperPanel.setManaged(false);
+            bottomPanel.setVisible(true);
+            bottomPanel.setManaged(true);
+        }
+    }
+
+    public void tryToAuth(ActionEvent actionEvent) {
+
+        if(socket == null || socket.isClosed()) {
+            connect();
+        }
+
+        try {
+            out.writeUTF("/auth " + loginField.getText() + " " + passwordField.getText());
+            loginField.clear();
+            passwordField.clear();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public void connect() {
 
         try {
             socket = new Socket(IP_ADRESS, PORT);
@@ -51,12 +96,23 @@ public class Controller implements Initializable{
                     try {
                         while (true) {
                             String str = in.readUTF();
-                            if (str.equals("/clientClose")){
+                            if (str.startsWith("/authok")) {
+                                setAuthorized(true);
                                 break;
                             } else {
                                 textArea.appendText(str + "\n");
                             }
                         }
+
+                        while (true) {
+                            String str = in.readUTF();
+                            if (str.equals("/serverclosed"))  {
+                                // closeApp();
+                                break;
+                            }
+                            textArea.appendText(str + "\n");
+                        }
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     } finally {
@@ -65,7 +121,7 @@ public class Controller implements Initializable{
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        System.exit(0);
+                        setAuthorized(false);
                     }
                 }
             }).start();
@@ -84,4 +140,15 @@ public class Controller implements Initializable{
             e.printStackTrace();
         }
     }
+
+
+
+//    public void closeApp() {
+//        try {
+//            socket.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        System.exit(0);
+//    }
 }
